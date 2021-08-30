@@ -12,20 +12,22 @@ from tqdm import trange
 from keras import optimizers
 
 # fix random seed for reproducibility
-#https://blog.csdn.net/aliceyangxi1987/article/details/73420583   对程序的说明
-numpy.random.seed(4)#0-4随机数
+# https://blog.csdn.net/aliceyangxi1987/article/details/73420583   对程序的说明
+numpy.random.seed(4)  # 0-4随机数
 
-sgd = optimizers.SGD(lr = 0.01,clipnorm = 1.0, momentum=0.0, decay=0.0, nesterov=False)
-adam1 = optimizers.Adam(lr=0.001, clipvalue=0.5,beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-lr=0.001
+sgd = optimizers.SGD(lr=0.01, clipnorm=1.0, momentum=0.0, decay=0.0, nesterov=False)
+adam1 = optimizers.Adam(lr=0.001, clipvalue=0.5, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+lr = 0.001
+
+
 def load_dataset(datasource: str) -> (numpy.ndarray, MinMaxScaler):
     """
     The function loads dataset from given `file name and uses MinMaxScaler to transform data
     :param datasource: file name of data source
     :return: tuple of dataset and the used MinMaxScaler
-    该函数从给定的文件名称加载数据集，并使用MinMaxScaler来转换数据
+    该函数从给定的文件名称加载数据集，并使用MinMaxScaler来转换数据L
      ：param datasource：数据源的文件名
-     ：return：数据集的元组和使用的MinMaxScaler
+     ：return：数据集的元组和使用的MinMaxScalerL
     """
     # load the dataset
     dataframe = pandas.read_csv(datasource, usecols=[0])
@@ -33,16 +35,16 @@ def load_dataset(datasource: str) -> (numpy.ndarray, MinMaxScaler):
     dataset = dataframe.values
     dataset = dataset.astype('float64')
 
-    #plt.plot(dataset)
-    #plt.show()
+    # plt.plot(dataset)
+    # plt.show()
 
-    # normalize the dataset
+    # normalize the datasetL
     scaler = MinMaxScaler(feature_range=(0, 1))
     dataset = scaler.fit_transform(dataset)
     return dataset, scaler
 
 
-def create_dataset(dataset: numpy.ndarray, look_back: int=1) -> (numpy.ndarray, numpy.ndarray):
+def create_dataset(dataset: numpy.ndarray, look_back: int = 1) -> (numpy.ndarray, numpy.ndarray):
     """
     The function takes two arguments: the `dataset`, which is a NumPy array that we want to convert into a dataset,
     and the `look_back`, which is the number of previous time steps to use as input variables
@@ -58,8 +60,8 @@ def create_dataset(dataset: numpy.ndarray, look_back: int=1) -> (numpy.ndarray, 
      ：return：输入和输出数据集的元组
     """
     data_x, data_y = [], []
-    for i in range(len(dataset)-look_back):
-        a = dataset[i:(i+look_back), 0]
+    for i in range(len(dataset) - look_back):
+        a = dataset[i:(i + look_back), 0]
         data_x.append(a)
         data_y.append(dataset[i + look_back, 0])
     return numpy.array(data_x), numpy.array(data_y)
@@ -87,7 +89,7 @@ def split_dataset(dataset: numpy.ndarray, train_size, look_back) -> (numpy.ndarr
     return train, test
 
 
-def build_model(look_back: int, batch_size: int=10) -> Sequential:
+def build_model(look_back: int, batch_size: int = 1) -> Sequential:
     """
     The function builds a keras Sequential model
     :param look_back: number of previous time steps as int
@@ -105,13 +107,13 @@ def build_model(look_back: int, batch_size: int=10) -> Sequential:
                    stateful=True,
                    return_sequences=True))
     model.add(Dropout(0.8))
-    model.add(LSTM(128,stateful=True,return_sequences=True))
-    #model.add(Dropout(0.25))
-    model.add(LSTM(64,stateful=True))
-    #model.add(LSTM(128,activation='relu',stateful=True,return_sequences=True))
-    #model.add(LSTM(128,activation='relu',stateful=True,return_sequences=False))
-    #model.add(LSTM(32,activation='relu',stateful=True,return_sequences=False))
-    #model.add(Dropout(0.5))
+    model.add(LSTM(128, stateful=True, return_sequences=True))
+    # model.add(Dropout(0.25))
+    model.add(LSTM(64, stateful=True))
+    # model.add(LSTM(128,activation='relu',stateful=True,return_sequences=True))
+    # model.add(LSTM(128,activation='relu',stateful=True,return_sequences=False))
+    # model.add(LSTM(32,activation='relu',stateful=True,return_sequences=False))
+    # model.add(Dropout(0.5))
     model.add(Dense(1, activation='linear'))
     model.compile(loss='mean_squared_error', optimizer=adam1)
     return model
@@ -163,7 +165,7 @@ def plot_data(dataset: numpy.ndarray,
     plt.show()
 
 
-def make_forecast(model: Sequential, look_back_buffer: numpy.ndarray, timesteps: int=1, batch_size: int=1):
+def make_forecast(model: Sequential, look_back_buffer: numpy.ndarray, timesteps: int = 1, batch_size: int = 1):
     forecast_predict = numpy.empty((0, 1), dtype=numpy.float64)
     for _ in trange(timesteps, desc='predicting data\t'):
         # look_back_buffer = numpy.reshape(look_back_buffer, (1,look_back_buffer.shape[0], look_back_buffer.shape[1]))
@@ -172,32 +174,32 @@ def make_forecast(model: Sequential, look_back_buffer: numpy.ndarray, timesteps:
         cur_predict = model.predict(look_back_buffer, batch_size)
         # add prediction to result
         # 添加预测结果
-        forecast_predict = numpy.concatenate([forecast_predict,cur_predict[-2:-1,:]], axis=0)
-#        for x in range(99):
-#            forecast_predict = numpy.delete(forecast_predict,-2,axis=0)
+        forecast_predict = numpy.concatenate([forecast_predict, cur_predict[-2:-1, :]], axis=0)
+        #        for x in range(99):
+        #            forecast_predict = numpy.delete(forecast_predict,-2,axis=0)
 
         # add new axis to prediction to make it suitable as input
         # 为预测添加新轴以使其适合作为输入
         cur_predict = numpy.reshape(cur_predict, (cur_predict.shape[0], cur_predict.shape[1], 1))
         # remove oldest prediction from buffer
         # 从缓冲区中移除最老的预测
-        look_back_buffer = numpy.delete(look_back_buffer,0, axis=1)
+        look_back_buffer = numpy.delete(look_back_buffer, 0, axis=1)
         # concat buffer with newest prediction
         # 用最新预测连接缓冲器
         look_back_buffer = numpy.concatenate([look_back_buffer, cur_predict], axis=1)
     return forecast_predict
 
 
-#def main():
-datasource = 'test.csv'
-#datasource = 'international-airline-passengers.csv'
+# def main():
+datasource = 'test-tdp.csv'
+# datasource = 'international-airline-passengers.csv'
 dataset, scaler = load_dataset(datasource)
 
 # split into train and test sets
 # 分成训练集和测试集
-look_back = int(len(dataset) * 0.20)
-#look_back = 200
-train_size = int(len(dataset) * 0.70)
+look_back = int(dataset.size * 0.20)
+# look_back = 200
+train_size = int(1008)
 train, test = split_dataset(dataset, train_size, look_back)
 
 # reshape into X=t and Y=t+1
@@ -212,19 +214,18 @@ test_x = numpy.reshape(test_x, (test_x.shape[0], test_x.shape[1], 1))
 
 # create and fit Multilayer Perceptron model
 # 创建并装配多层Perceptron模型
-batch_size = 100
-#batch_size = 1
+batch_size = 144
+# batch_size = 1
 
-model = load_model('3layers_256+128+64_100batch_1000treehumi_LSTM_inverse')   
-#model = build_model(look_back, batch_size=batch_size)
-#for _ in trange(100, desc='fitting model\t'):
-#     model.fit(train_x, train_y, nb_epoch=1, batch_size=batch_size, verbose=2, shuffle=False)
+model = load_model('256_128_64_144batch_1440treehumi_LSTM')
+# model = build_model(look_back, batch_size=batch_size)
+# for _ in trange(100, desc='fitting model\t'):
+#     model.fit(train_x, train_y, epochs=5, batch_size=batch_size, verbose=2, shuffle=False)
 #     model.reset_states()              # , mininterval=1.0
 
-history=model.fit(train_x, train_y, nb_epoch=5, batch_size=batch_size, verbose=2, shuffle=False) 
-#model.reset_states()
-
-#model.save('')
+history = model.fit(train_x, train_y, epochs=5, batch_size=batch_size, verbose=2, shuffle=False)
+# model.reset_states()
+# model.save('256_128_64_144batch_1440treehumi_LSTM')
 # generate predictions for training
 # 生成训练预测
 train_predict = model.predict(train_x, batch_size)
@@ -233,8 +234,8 @@ test_predict = model.predict(test_x, batch_size)
 # generate forecast predictions
 # 生成预测预测
 
-#forecast_predict = make_forecast(model, test_x[-1::], timesteps=100, batch_size=batch_size)
-forecast_predict = make_forecast(model, test_x[-201:-1,:,:], timesteps=300, batch_size=batch_size)
+# forecast_predict = make_forecast(model, test_x[-1::], timesteps=100, batch_size=batch_size)
+forecast_predict = make_forecast(model, test_x[-145:-1, :, :], timesteps=288, batch_size=batch_size)
 
 # invert dataset and predictions
 # 反演数据集和预测
@@ -246,7 +247,7 @@ test_y = scaler.inverse_transform([test_y])
 forecast_predict = scaler.inverse_transform(forecast_predict)
 
 # calculate root mean squared error
- # 计算均方根误差
+# 计算均方根误差
 train_score = numpy.sqrt(mean_squared_error(train_y[0], train_predict[:, 0]))
 print('Train Score: %.2f RMSE' % train_score)
 test_score = numpy.sqrt(mean_squared_error(test_y[0], test_predict[:, 0]))
@@ -254,6 +255,6 @@ print('Test Score: %.2f RMSE' % test_score)
 
 plot_data(dataset, look_back, train_predict, test_predict, forecast_predict)
 
-#if __name__ == '__main__':
+# if __name__ == '__main__':
 #    main()
-    #model = load_model('my_model.h5')
+# model = load_model('my_model.h5')
